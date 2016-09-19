@@ -45,6 +45,21 @@ var TILESET_SPACING = 2;
 var TILESET_COUNT_X = 14;
 var TILESET_COUNT_Y = 14;
 
+// abitrary choice for 1m
+var METER = TILE;
+// very exaggerated gravity (6x)
+var GRAVITY = METER * 9.8 * 6;
+// max horizontal speed (10 tiles per second)
+var MAXDX = METER * 10;
+// max vertical speed (15 tiles per second)
+var MAXDY = METER * 15;
+// horizontal acceleration - take 1/2 second to reach maxdx
+var ACCEL = MAXDX * 2;
+// horizontal friction - take 1/6 second to stop from maxdx
+var FRICTION = MAXDX * 6;
+// (a large) instantaneous jump impulse
+var JUMP = METER * 1500;
+
 // some variables to calculate the Frames Per Second (FPS - this tells use
 // how fast our game is running, and allows us to make the game run at a 
 // constant speed)
@@ -53,9 +68,23 @@ var fpsCount = 0;
 var fpsTime = 0;
 
 
+// lives
+var lives = 3;
+
+// timer
+var timer = 5;
+
+// the score
+var score = 0;
+
+
 // load the image to use for the level tiles
 var tileset = document.createElement("img");
 tileset.src = "tileset.png";
+
+// load an image to draw Hearts
+var heartImage = document.createElement("img");
+heartImage.src = "heartImage.png";
 
 // load an image to draw
 var chuckNorris = document.createElement("img");
@@ -110,6 +139,10 @@ function bound(value, min, max)
 
 
 var cells = []; // the array that holds our simplified collision data
+
+var musicBackground;
+var sfxFire;
+
 function initialize() {
 	for(var layerIdx = 0; layerIdx < LAYER_COUNT; layerIdx++) 
 	{ // initialize the collision map
@@ -139,32 +172,74 @@ function initialize() {
 			}
 		}
 	}
+	
+	musicBackground = new Howl(
+	{
+		urls: ["background.ogg"],
+		loop: true,
+		buffer: true,
+		volume: 0.5
+	} );
+	musicBackground.play();
+	
+	sfxFire = new Howl(
+	{
+		urls: ["fireEffect.ogg"],
+		buffer: true,
+		volume: 1,
+		onend: function() {
+			isSfxPlaying = false;
+		}
+	} );
+	
 }
-
+var worldOffsetX = 0;
 function drawMap()
 {
-	for(var layerIdx=0; layerIdx<LAYER_COUNT; layerIdx++)
+	var startX = -1;
+	var maxTiles = Math.floor(SCREEN_WIDTH / TILE) + 2;
+	var tileX = pixelToTile(player.position.x);
+	var offsetX = TILE + Math.floor(player.position.x%TILE);
+	
+	startX = tileX - Math.floor(maxTiles / 2);
+	
+	if(startX < -1)
 	{
-		var idx = 0;
+		startX = 0;
+		offsetX = 0;
+	}
+	if(startX > MAP.tw - maxTiles)
+	{
+		startX = MAP.tw - maxTiles + 1;
+		offsetX = TILE;
+	}
+		
+		worldOffsetX = startX * TILE + offsetX;
+		
+		
+	
+	for( var layerIdx=0; layerIdx < LAYER_COUNT; layerIdx++ )
+	{
 		for( var y = 0; y < level1.layers[layerIdx].height; y++ )
 		{
-			for( var x = 0; x < level1.layers[layerIdx].width; x++ )
+			var idx = y * level1.layers[layerIdx].width + startX;
+			for( var x = startX; x < startX + maxTiles; x++ )
 			{
 				if( level1.layers[layerIdx].data[idx] != 0 )
 				{
-					// the tiles in the Tiled map are base 1 (meaning a value of 0 means no tile), so subtract one from the tileset id to get the
+					// the tiles in the Tiled map are base 1 (meaning a value of 0 means no tile),
+					// so subtract one from the tileset id to get the
 					// correct tile
 					var tileIndex = level1.layers[layerIdx].data[idx] - 1;
 					var sx = TILESET_PADDING + (tileIndex % TILESET_COUNT_X) * (TILESET_TILE + TILESET_SPACING);
-					var sy = TILESET_PADDING + (Math.floor(tileIndex / TILESET_COUNT_X)) * (TILESET_TILE + TILESET_SPACING);
-					context.drawImage(tileset, sx, sy, TILESET_TILE, TILESET_TILE, x*TILE, (y-1)*TILE, TILESET_TILE, TILESET_TILE);
+					var sy = TILESET_PADDING + (Math.floor(tileIndex / TILESET_COUNT_Y)) * (TILESET_TILE + TILESET_SPACING);
+					context.drawImage(tileset, sx, sy, TILESET_TILE, TILESET_TILE, (x-startX)*TILE - offsetX, (y-1)*TILE, TILESET_TILE, TILESET_TILE);
 				}
 				idx++;
 			}
 		}
 	}
 }
-
 function run()
 {
 	context.fillStyle = "#ccc";
@@ -172,11 +247,49 @@ function run()
 	
 	var deltaTime = getDeltaTime();
 	
-	// draw the world map
-	drawMap();
-	
+	// update the player
 	player.update(deltaTime);
+	
+	// draw the world map then player
+	drawMap();
 	player.draw();
+	
+	timer -= deltaTime;
+	
+	// score
+	context.fillStyle = "Red";
+	context.font = "32px Arial";
+	var scoreText = "Score: " + score;
+	context.fillText(scoreText, SCREEN_WIDTH - 170, 45);
+	
+	// timer
+	context.fillStyle = "red";
+	context.font = "32px Arial";
+	var timerText = "Time Left:" + timer.toFixed(0);
+	context.fillText(timerText, SCREEN_WIDTH - 200, 80);
+	
+	if(timer == 0);
+	{
+	
+	}
+	
+	// life counter
+	for(var i=0; i<lives; i++)
+	{
+		context.drawImage(heartImage, 20 + ((heartImage.width+2)*i), 30);
+	}
+	
+	if(player.position.y >= canvas.height)
+	{
+		lives -= 1;
+		player.position.set(9*TILE, 0*TILE);
+		
+		if(lives <= 0)
+		{
+			gameOver = true	
+		}
+	}
+		
 	
 	// update the frame counter
 	fpsTime += deltaTime;
@@ -192,6 +305,7 @@ function run()
 	context.fillStyle = "#f00";
 	context.font="14px Arial";
 	context.fillText("FPS: " + fps, 5, 20, 100);
+	
 }
 
 initialize();
