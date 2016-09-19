@@ -29,6 +29,13 @@ function getDeltaTime()
 
 //-------------------- Don't modify anything above here
 
+// define some constant values for the game states
+var STATE_SPLASH = 0;
+var STATE_GAME = 1;
+var STATE_GAMEOVER = 2;
+
+var gameState = STATE_SPLASH;
+
 var SCREEN_WIDTH = canvas.width;
 var SCREEN_HEIGHT = canvas.height;
 
@@ -247,6 +254,40 @@ function run()
 	
 	var deltaTime = getDeltaTime();
 	
+	switch(gameState)
+	{
+		case STATE_SPLASH:
+			runSplash(deltaTime);
+			break;
+		case STATE_GAME:
+			runGame(deltaTime);
+			break;
+		case STATE_GAMEOVER:
+			runGameOver(deltaTime);
+			break;
+	}
+		
+}
+
+initialize();
+
+var splashTimer = 3;
+function runSplash(deltaTime)
+{
+	splashTimer -= deltaTime;
+	if(splashTimer <= 0)
+	{
+		gameState = STATE_GAME;
+		return;
+	}
+	context.fillStyle = "#000";
+	context.font="24px Arial";
+	context.fillText("SPLASH SCREEN", 200, 240);
+}
+
+function runGame(deltaTime)
+{
+	
 	// update the player
 	player.update(deltaTime);
 	
@@ -286,7 +327,7 @@ function run()
 		
 		if(lives <= 0)
 		{
-			gameOver = true	
+			runGameOver = true;
 		}
 	}
 		
@@ -308,7 +349,14 @@ function run()
 	
 }
 
-initialize();
+function runGameOver(deltaTime)
+{
+	context.fillStyle = "#000";
+	context.font="24px Arial";
+	context.fillText("Game Over!", 200, 240);
+}
+
+
 
 //-------------------- Don't modify anything below here
 
