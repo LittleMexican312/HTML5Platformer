@@ -32,17 +32,19 @@ function getDeltaTime()
 // define some constant values for the game states
 var STATE_SPLASH = 0;
 var STATE_GAME = 1;
-var STATE_GAMEOVER = 2;
+var STATE_GAMEWIN = 2;
+var STATE_GAMEOVER = 3;
 
 var gameState = STATE_SPLASH;
 
 var SCREEN_WIDTH = canvas.width;
 var SCREEN_HEIGHT = canvas.height;
 
-var LAYER_COUNT = 3;
+var LAYER_COUNT = 4;
 var LAYER_BACKGOUND = 0;
 var LAYER_PLATFORMS = 1;
 var LAYER_LADDERS = 2;
+var LAYER_OBJECT_END_GAME = 3;
 
 var MAP = { tw: 60, th: 15 };
 var TILE = 35;
@@ -79,7 +81,7 @@ var fpsTime = 0;
 var lives = 3;
 
 // timer
-var timer = 5;
+var timer = 20;
 
 // the score
 var score = 0;
@@ -180,6 +182,30 @@ function initialize() {
 		}
 	}
 	
+	// initialize trigger layer in collision map
+	cells[LAYER_OBJECT_END_GAME] = [];
+	idx = 0;
+	for(var y = 0; y < level1.layers[LAYER_OBJECT_END_GAME].height; y++)
+	{
+		cells[LAYER_OBJECT_END_GAME][y] = [];
+		for(var x = 0; x < level1.layers[LAYER_OBJECT_END_GAME].width; x++)
+		{
+			if(level1.layers[LAYER_OBJECT_END_GAME].data[idx] != 0)
+			{
+				cells[LAYER_OBJECT_END_GAME][y][x] = 1;
+				cells[LAYER_OBJECT_END_GAME][y-1][x] = 1;
+				cells[LAYER_OBJECT_END_GAME][y-1][x+1] = 1;
+				cells[LAYER_OBJECT_END_GAME][y][x+1] = 1;
+			}
+			else if(cells[LAYER_OBJECT_END_GAME][y][x] != 1)
+			{
+				// if we haven't set this cell's value, then set it to 0 now
+				cells[LAYER_OBJECT_END_GAME][y][x] = 0;
+			}
+		idx++;
+	}
+}
+	
 	musicBackground = new Howl(
 	{
 		urls: ["background.ogg"],
@@ -262,6 +288,9 @@ function run()
 		case STATE_GAME:
 			runGame(deltaTime);
 			break;
+		case STATE_GAMEWIN:
+			runGameWin(deltaTime);
+			break;	
 		case STATE_GAMEOVER:
 			runGameOver(deltaTime);
 			break;
@@ -282,7 +311,15 @@ function runSplash(deltaTime)
 	}
 	context.fillStyle = "#000";
 	context.font="24px Arial";
-	context.fillText("SPLASH SCREEN", 200, 240);
+	context.fillText("Chuck Noris", 240, 255);
+	
+	context.fillStyle = "#000";
+	context.font="24px Arial";
+	context.fillText("Platformer", 252, 225);
+	
+	context.fillStyle = "#000";
+	context.font="16px Arial";
+	context.fillText("By Luke Flahavin", 500, 450);
 }
 
 function runGame(deltaTime)
@@ -297,22 +334,11 @@ function runGame(deltaTime)
 	
 	timer -= deltaTime;
 	
-	// score
-	context.fillStyle = "Red";
-	context.font = "32px Arial";
-	var scoreText = "Score: " + score;
-	context.fillText(scoreText, SCREEN_WIDTH - 170, 45);
-	
 	// timer
 	context.fillStyle = "red";
 	context.font = "32px Arial";
 	var timerText = "Time Left:" + timer.toFixed(0);
-	context.fillText(timerText, SCREEN_WIDTH - 200, 80);
-	
-	if(timer == 0);
-	{
-	
-	}
+	context.fillText(timerText, SCREEN_WIDTH - 200, 60);
 	
 	// life counter
 	for(var i=0; i<lives; i++)
@@ -324,12 +350,12 @@ function runGame(deltaTime)
 	{
 		lives -= 1;
 		player.position.set(9*TILE, 0*TILE);
-		
-		if(lives <= 0)
-		{
-			runGameOver = true;
-		}
 	}
+	
+	if (lives == 0) 
+	{
+		gameState = STATE_GAMEOVER;
+    }
 		
 	
 	// update the frame counter
@@ -345,8 +371,7 @@ function runGame(deltaTime)
 	// draw the FPS
 	context.fillStyle = "#f00";
 	context.font="14px Arial";
-	context.fillText("FPS: " + fps, 5, 20, 100);
-	
+	context.fillText("FPS: " + fps, 5, 20, 100);	
 }
 
 function runGameOver(deltaTime)
@@ -354,6 +379,52 @@ function runGameOver(deltaTime)
 	context.fillStyle = "#000";
 	context.font="24px Arial";
 	context.fillText("Game Over!", 200, 240);
+	
+	context.fillStyle = "#000";
+	context.font = "16px Arial";
+	context.fillText("Press R To Start Again!", 200, 260);
+	
+	context.fillStyle = "#000";
+    context.font = "16px Arial";
+    context.fillText("Score = " + timer.toFixed(0), 200, 300);
+
+	if (keyboard.isKeyDown(keyboard.KEY_R) == true)
+	{
+		gameState = STATE_GAME;
+		lives = 3;
+		timer = 20;
+		player.position.set(9*TILE, 0*TILE);
+	}
+	
+	
+	// I could not get this function to work i have defined it and it still gives me the error it is not defined
+	function runGameWin(deltaTime)
+{
+	context.fillStyle = "#000";
+	context.font="24px Arial";
+	context.fillText("Congradulations You Win!", 200, 240);
+	
+	context.fillStyle = "#000";
+    context.font = "16px Arial";
+    context.fillText("Score = " + timer.toFixed(0), 200, 260);
+	
+	context.fillStyle = "#000";
+	context.font = "16px Arial";
+	context.fillText("Good Job!", 200, 280);
+	
+	context.fillStyle = "#000";
+	context.font = "16px Arial";
+	context.fillText("Press R To Start Again!", 200, 300);
+
+	if (keyboard.isKeyDown(keyboard.KEY_R) == true)
+	{
+		gameState = STATE_GAME;
+		lives = 3;
+		timer = 20;
+		player.position.set(9*TILE, 0*TILE);
+	}
+}
+	
 }
 
 

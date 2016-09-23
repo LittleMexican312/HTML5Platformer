@@ -56,62 +56,43 @@ Player.prototype.update = function(deltaTime)
 	var jump = false;
 	
 	// check keypress events
-	if(keyboard.isKeyDown(keyboard.KEY_LEFT) == true) 
-	{
-		left = true;
-		this.direction = LEFT;
-		if(this.sprite.currentAnimation != ANIM_WALK_LEFT)
-			this.sprite.setAnimation(ANIM_WALK_LEFT);
-	}
-	
-	if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) 
-	{
-		right = true;
-		this.direction = RIGHT;
-		if(this.sprite.currentAnimation != ANIM_WALK_RIGHT)
-			this.sprite.setAnimation(ANIM_WALK_RIGHT);
-	}
-	else {
-		if(this.jumping == false && this.falling == false)
-		{
-			if(this.direction == LEFT)
-			{
-				if(this.sprite.currentAnimation != ANIM_IDLE_LEFT)
-				this.sprite.setAnimation(ANIM_IDLE_LEFT);
-			}
-			else
-			{
-				if(this.sprite.currentAnimation != ANIM_IDLE_RIGHT)
-				this.sprite.setAnimation(ANIM_IDLE_RIGHT);
-			}
-		}
-	}
-	
-	if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
-		jump = true;
-	}
-	if(this.cooldownTimer > 0)
-	{
-		this.cooldownTimer -= deltaTime;
-	}
-	if(keyboard.isKeyDown(keyboard.KEY_SPACE) == true && this.cooldownTimer <= 0) {
-		sfxFire.play();
-		this.cooldownTimer = 0.3;
-		// Shoot a bullet
-	}
-	
-	if(keyboard.isKeyDown(keyboard.KEY_SPACE) == true) 
-	{
-		jump = true;
-		if(left == true) 
-		{
-			this.sprite.setAnimation(ANIM_JUMP_LEFT);
-			}
-			if(right == true) 
-			{
-				this.sprite.setAnimation(ANIM_JUMP_RIGHT);
-			}
-	}
+    if (keyboard.isKeyDown(keyboard.KEY_LEFT) == true) {
+        left = true;
+        this.direction = LEFT;
+        if (this.sprite.currentAnimation != ANIM_WALK_LEFT)
+            this.sprite.setAnimation(ANIM_WALK_LEFT);
+
+    } else if (keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) {
+        right = true;
+        this.direction = RIGHT;
+        if (this.sprite.currentAnimation != ANIM_WALK_RIGHT)
+            this.sprite.setAnimation(ANIM_WALK_RIGHT);
+    } else {
+        if (this.jumping == false && this.falling == false) {
+            if (this.direction == LEFT) {
+                if (this.sprite.currentAnimation != ANIM_IDLE_LEFT)
+                    this.sprite.setAnimation(ANIM_IDLE_LEFT);
+            }
+            else {
+                if (this.sprite.currentAnimation != ANIM_IDLE_RIGHT)
+                    this.sprite.setAnimation(ANIM_IDLE_RIGHT);
+            }
+        }
+    }
+    if (keyboard.isKeyDown(keyboard.KEY_UP) == true) {
+        jump = true;
+        if (left == true) {
+            this.sprite.setAnimation(ANIM_JUMP_LEFT);
+        }
+        if (right == true) {
+            this.sprite.setAnimation(ANIM_JUMP_RIGHT);
+        }
+    }
+    if (keyboard.isKeyDown(keyboard.KEY_SPACE) == true && this.cooldownTimer <= 0) {
+        sfxFire.play();
+        this.cooldownTimer = 0.3;
+        // Shoot a bullet
+    }
 	
 	var wasleft = this.velocity.x < 0;
 	var wasright = this.velocity.x > 0;
@@ -210,6 +191,11 @@ Player.prototype.update = function(deltaTime)
 				this.position.x = tileToPixel(tx + 1);
 				this.velocity.x = 0; // stop horizontal velocity
 			}
+		}
+		
+		if(cellAtTileCoord(LAYER_OBJECT_END_GAME, tx, ty) == true)
+		{
+			gameState = 3;
 		}
 }
 
